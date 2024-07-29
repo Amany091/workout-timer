@@ -1,23 +1,17 @@
-import logo from './logo.svg';
 import './App.css';
+import Sidebar from './components/sidebar';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import Workout from './components/workout';
+import { useState } from 'react';
+
 
 function App() {
+  const [active, setActive] = useState({})
+  const [task,setTask] = useState(0) // get the index of displyed task
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="App d-flex justify-content-evenly text-light bg-dark p-2">
+      <Workout index={task} setTask={setTask} setActive={setActive} />
+      <Sidebar  setTask = {setTask} active={active} setActive={setActive} />
     </div>
   );
 }
