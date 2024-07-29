@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { tasks } from './tasks'
 
-const Workout = ({ index, setTask ,setActive}) => {
+const Workout = ({ index, setTask, setActive }) => {
     let [timerValue, setTimerValue] = useState(tasks[index].time);
-    console.log("state", timerValue)
-
     let [timeWidth, setTimeWidth] = useState(0);
     let [workOutWidth, setWorkOutWidth] = useState(0)
     let [workoutMinutes, setWorkoutMinutes] = useState(0)
@@ -15,11 +13,16 @@ const Workout = ({ index, setTask ,setActive}) => {
     const intervalRef = useRef()
 
     // callback used to avoid re-render after changing index to keep values and improve performance 
-    const handleStartTimer = () => {
+    const handleStartTimer = useCallback(() => {
         intervalRef.current = setInterval(() => {
+            if (timerValue <= 0) {
+                setTask(index + 1)
+                // setTimerValue(tasks[index+1].time)
+                setActive(tasks[index + 1])
+            }
             setIsPaused(!isPaused)
             setTimerValue(timerValue -= 1);
-            
+
             setTimeWidth((prevWidth) => prevWidth + (100 / tasks[index].time))
             setWorkOutWidth((prevTime) => prevTime + 0.4000)
             setWorkoutSeconds(workoutSeconds += 1)
@@ -28,24 +31,19 @@ const Workout = ({ index, setTask ,setActive}) => {
                 setWorkoutMinutes(workoutMinutes + 1)
                 setWorkoutSeconds(0)
             }
-            if (timerValue <= 0) {
-                setTask(index + 1)
-                // setTimerValue(tasks[index+1].time)
-                setActive(tasks[index+1])
-            }
 
         }, 1000)
-        
-        return ()=> clearInterval(intervalRef.current)
-    }
-    
+
+        return () => clearInterval(intervalRef.current)
+    }, [index, timerValue, setTimerValue, timeWidth, workOutWidth, workoutSeconds, workoutMinutes])
+
     useEffect(() => {
         setActive(tasks[index])
         setTimeWidth(0)
         setTimerValue(tasks[index].time) // update value after re-render 
-        
-    }, [index,tasks])
-    
+
+    }, [index])
+
     const handlePauseTimer = () => {
         setIsPaused(!isPaused)
         clearInterval(intervalRef.current)
@@ -79,7 +77,7 @@ const Workout = ({ index, setTask ,setActive}) => {
             </div>
             <div className="control_timer d-flex justify-content-between w-100">
                 <button type='button' className="btn text-light fs-3 border-dark btn-outline-dark" onClick={handlePauseTimer} disabled={!isPaused} >Pause</button >
-                <button type="button" className="btn text-light fs-3 border-dark btn-outline-dark "  onClick={handleStartTimer} disabled={isPaused} >Start</button>
+                <button type="button" className="btn text-light fs-3 border-dark btn-outline-dark " onClick={handleStartTimer} disabled={isPaused} >Start</button>
                 <button type="button" className="btn text-light fs-3 " onClick={handleReset}>Reset</button>
             </div>
         </div>
