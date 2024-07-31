@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { tasks } from './tasks'
 
 const Workout = ({ index, setTask, setActive }) => {
-    let [workIndex,setWorkIndex] = useState(index)
-    let [timerValue, setTimerValue] = useState(tasks[workIndex].time);
+    let [timerValue, setTimerValue] = useState(tasks[index].time);
     let [timeWidth, setTimeWidth] = useState(0);
     const [isPaused, setIsPaused] = useState(false)
     let [workoutSecondsDone, setWorkoutSecondsDone] = useState({}) // store time acheived from beggining to current actiivity
@@ -13,22 +12,22 @@ const Workout = ({ index, setTask, setActive }) => {
         workoutSeconds = workoutTotalSeconds.reduce((acc, curr) => acc + curr, 0) % 60,
         workoutMinutes = workoutTotalSeconds.reduce((acc, curr) => acc + curr, 0) / 60;
 
-    const workoutRemaining = [...tasks].splice(workIndex),
+    const workoutRemaining = [...tasks].splice(index),
         workoutRemainingSeconds = workoutRemaining.map(({ time }) => time).reduce((acc, curr) => acc + curr, 0); // calculate the remaining time from current activity to last one
 
-    const workoutTargetAvg = [...tasks].splice(0, workIndex).map(({ time }) => time === 10 ? 1.92308 : 5.76923).reduce((acc, curr) => acc + curr, 0) // calculate the target acheived from begining to current activity
+    const workoutTargetAvg = [...tasks].splice(0, index).map(({ time }) => time === 10 ? 1.92308 : 5.76923).reduce((acc, curr) => acc + curr, 0) // calculate the target acheived from begining to current activity
 
     useEffect(() => {
-        setWorkIndex(index)
+        setTask(index)
         workoutSecondsDone = {
-            workoutMinutes: [...tasks].splice(0, workIndex).map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) / 60,
-            workoutSeconds: [...tasks].splice(0, workIndex).map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) % 60
+            workoutMinutes: [...tasks].splice(0, index).map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) / 60,
+            workoutSeconds: [...tasks].splice(0, index).map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) % 60
         }
         setWorkoutSecondsDone(workoutSecondsDone) // to update every time when index change
-        setActive(tasks[workIndex])
+        setActive(tasks[index])
         setTimeWidth(0)
-        setTimerValue(tasks[workIndex].time) // update value when index change  
-    }, [workIndex, index])
+        setTimerValue(tasks[index].time) // update value when index change  
+    }, [index])
 
     const handleStartTimer = useCallback(() => {
         intervalRef.current = setInterval(() => {
@@ -38,25 +37,22 @@ const Workout = ({ index, setTask, setActive }) => {
             }
             
             if (timerValue <= 0) {
-                setWorkIndex(workIndex+1)
-                console.log("new Index", workIndex)
-                setActive(tasks[workIndex])
-                setTimerValue(tasks[workIndex].time)
+                setTask(index + 1);
+                console.log("new Index inside function handler", index)
+                setActive(tasks[index])
+                setTimerValue(tasks[index].time)
             } else {
                 setTimerValue(timerValue -= 1);
                 console.log("timerValue", timerValue)
             }
             
-            console.log("old Index :", workIndex)
+            console.log("old Index :", index)
             setIsPaused(!isPaused)
-            setTimeWidth((prevWidth) => prevWidth + (100 / tasks[workIndex].time)) // Progress Bar Activity
+            setTimeWidth((prevWidth) => prevWidth + (100 / tasks[index].time)) // Progress Bar Activity
         }, 1000)
 
         return () => clearInterval(intervalRef.current)
-    },[])
-
-    
-    
+    },[index, index, timeWidth, workoutSecondsDone,timerValue ])
 
     const handlePauseTimer = () => {
         setIsPaused(!isPaused)
@@ -71,10 +67,12 @@ const Workout = ({ index, setTask, setActive }) => {
         clearInterval(intervalRef.current)
     }
 
+    console.log("index changed outer function handler", index)
+    
     return (
         <div className='w-50 d-flex flex-column mt-5 align-items-center workout'>
-            <h1 className={`${tasks[workIndex].time > 10 ? 'text-warning' : "text-success"} text-center`} > {Math.floor(workoutMinutes) === workoutSecondsDone.workoutMinutes && workoutSeconds === workoutSecondsDone.workoutSeconds ? 'Workout Completed' : tasks[index].task} </h1>
-            <h4>{workoutRemaining.length == 1 ? "Last activity , almost done" : 'next: ' + tasks[workIndex + 1].task} </h4>
+            <h1 className={`${tasks[index].time > 10 ? 'text-warning' : "text-success"} text-center`} > {Math.floor(workoutMinutes) === workoutSecondsDone.workoutMinutes && workoutSeconds === workoutSecondsDone.workoutSeconds ? 'Workout Completed' : tasks[index].task} </h1>
+            <h4>{workoutRemaining.length == 1 ? "Last activity , almost done" : 'next: ' + tasks[index + 1].task} </h4>
             <h1 className='text-success'>00: {timerValue} </h1>
             {/* Current Activity Time Progress Bar */}
             <div className=" w-100 rounded bg-light" style={{ height: "20px" }} >
