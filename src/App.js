@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 function App() {
   const [active, setActive] = useState({})
-  const [task,setTask] = useState(0) // get the index of displyed task
+  const [task, setTask] = useState(0) // get the index of displyed task
   return (
     <div className="App d-flex justify-content-evenly text-light bg-dark p-2">
       <Workout index={task} setTask={setTask} setActive={setActive} />
