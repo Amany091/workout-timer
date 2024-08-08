@@ -1,71 +1,66 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { tasks } from './tasks'
 
-const Workout = ({ index, setTask, setActive }) => {
+const Workout = ({ index, setIndex, setActive, currentIndex }) => {
     let [timeWidth, setTimeWidth] = useState(0);
     const [isPaused, setIsPaused] = useState(false)
+    const [isfinished,setIsFinished] = useState(false)
     let [workoutSecondsDone, setWorkoutSecondsDone] = useState({})
-    let [currentIndex, setCurrentIndex] = useState(index)
     const intervalRef = useRef()
-    let timer = useRef(tasks[index].time);
-    // let currentIndex = index
-    // currentIndex = index // to update currentIndex in sidebar
-    console.log('currentIndex outer function', currentIndex)
-
-    // calculate total minutes and seconds
-    const workoutTotalSeconds = [...tasks].map(({ time }) => time),
-        workoutSeconds = workoutTotalSeconds.reduce((acc, curr) => acc + curr, 0) % 60,
-        workoutMinutes = workoutTotalSeconds.reduce((acc, curr) => acc + curr, 0) / 60;
+    let timer = useRef(tasks[currentIndex].time);
+    const currentIndexRef = useRef(index) // store current index to stayed updated across renders
+    let workoutDone = [...tasks].splice(0, currentIndex)
 
     // calculate the remaining time from current activity to last one
     const workoutRemaining = [...tasks].splice(currentIndex),
         workoutRemainingSeconds = workoutRemaining.map(({ time }) => time).reduce((acc, curr) => acc + curr, 0);
 
     // calculate time passed from zero to current activity with checking on time to increase width range
-    const workoutTargetAvg = [...tasks].splice(0, currentIndex).map(({ time }) => time === 10 ? 1.92308 : 5.76923).reduce((acc, curr) => acc + curr, 0);
+    const workoutTargetAvg = workoutDone.map(({ time }) => time === 10 ? 1.92308 : 5.76923).reduce((acc, curr) => acc + curr, 0);
 
-    useEffect(() => {
-        setTask(index)
-        setCurrentIndex(index)
-        console.log(currentIndex)
-        // calculate minutes and seconds from beggening activity to current one
-        workoutSecondsDone = {
-            workoutMinutes: [...tasks].splice(0, index).map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) / 60,
-            workoutSeconds: [...tasks].splice(0, index).map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) % 60
-        }
-        setWorkoutSecondsDone(workoutSecondsDone) // to update every time when currentIndex change
-        setActive(tasks[index])
-        setTimeWidth(0)
-        // update timer when currentIndex change
-        timer.current = tasks[index].time
-    }, [index,currentIndex])
-    
     const handleStartTimer = useCallback(() => {
         setIsPaused(!isPaused)
-        setCurrentIndex(index)
         intervalRef.current = setInterval(() => {
-            console.log('currentIndex inside function', currentIndex)
-            timer.current -= 1;
-            // if timer leaves to the end stop interval 
-            if (Math.floor(workoutMinutes) === workoutSecondsDone.workoutMinutes && workoutSeconds === workoutSecondsDone.workoutSeconds) {
-                clearInterval(intervalRef.current)
+            if (currentIndexRef.current === tasks.length -1 && timer.current < 0) {
+                setIsPaused(true)
+                setIsFinished(true)
+                return()=>clearInterval(intervalRef.current)
+            } else {
+                timer.current -= 1;
+                setTimeWidth((prevWidth) => prevWidth + (100 / tasks[currentIndexRef.current].time))
+                if (timer.current < 0) {
+                    setIndex((prevIndex) => {
+                        currentIndex = prevIndex + 1;
+                        setActive(tasks[currentIndex])
+                        timer.current = tasks[currentIndex].time
+                        return currentIndex
+                    });
+                }
+                setIsFinished(false)
             }
-            if (timer.current <= 0) {
-                currentIndex++
 
-                // setTimeWidth(0)
-                setTask(currentIndex);
-                setActive(tasks[currentIndex])
-                timer.current = tasks[currentIndex].time
-                
-            }
-            // console.log('currentIndex inside function ', currentIndex)
-            // increase width of progress bar by calculating the precentege of time 
-            setTimeWidth((prevWidth) => prevWidth + (100 / tasks[currentIndex].time))
+
+
         }, 1000)
-
         return () => clearInterval(intervalRef.current)
-    }, [ currentIndex,timeWidth, workoutSecondsDone, isPaused])
+    }, [setActive, setIndex, setIsPaused])
+
+    useEffect(() => {
+        setIndex(currentIndex)
+        currentIndexRef.current = index
+        // calculate minutes and seconds from beggening activity to current one
+        workoutSecondsDone = {
+            workoutMinutes: workoutDone.map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) / 60,
+            workoutSeconds: workoutDone.map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) % 60
+        }
+        setWorkoutSecondsDone(workoutSecondsDone) // to update every time when currentIndex change
+        setActive(tasks[currentIndex])
+        setTimeWidth(0)
+        // update timer when index change
+        timer.current = tasks[currentIndex].time
+
+    }, [index, currentIndex, setIndex])
+
 
     const handlePauseTimer = () => {
         setIsPaused(!isPaused)
@@ -74,21 +69,27 @@ const Workout = ({ index, setTask, setActive }) => {
 
 
     const handleReset = () => {
-        setTask(0)
+        setIndex(0)
         setActive(tasks[0])
         setTimeWidth(0)
         timer.current = tasks[0].time
-        clearInterval(tasks[currentIndex].time)
+        clearInterval(intervalRef.current)
+        setIsPaused(false)
     }
 
     return (
         <div className='w-50 d-flex flex-column mt-5 align-items-center workout'>
-            <h1 className={`${tasks[index].time > 10 ? 'text-warning' : "text-success"} text-center`} > {Math.floor(workoutMinutes) === workoutSecondsDone.workoutMinutes && workoutSeconds === workoutSecondsDone.workoutSeconds ? 'Workout Completed' : tasks[index].task} </h1>
-            <h4>{workoutRemaining.length == 1 ? "Last activity , almost done" : 'next: ' + tasks[index + 1].task} </h4>
-            <h1 className='text-success'>00: {timer.current} </h1>
+            <h1 className={`${tasks[index].time > 10 ? 'text-warning' : "text-success"} text-center`} > {isfinished? 'Workout Completed 🎉' : tasks[index].task} </h1>
+            <h4>
+                {isfinished ? '🎉🎉🎉🎉🎉':
+                    workoutRemaining.length == 1 ? "Last activity , almost done" :
+                    workoutRemaining.length === 0 ? '' : 'next: ' + tasks[index + 1].task
+                }
+            </h4>
+            <h1 className='text-success'>00: {isfinished? '00' : timer.current} </h1>
             {/* Current Activity Time Progress Bar */}
             <div className=" w-100 rounded bg-light overflow-hidden" style={{ height: "20px" }} >
-                <div className="h-100 rounded bg-success " style={{ width: timeWidth + '%' }}></div>
+                <div className="h-100 rounded bg-success " style={isfinished? {width:'100%'} :{ width: timeWidth + '%' }}></div>
             </div>
             {/* Workout Time Range */}
             <div className="time mt-5 w-100 d-flex justify-content-between">
@@ -98,11 +99,11 @@ const Workout = ({ index, setTask, setActive }) => {
             </div>
             {/* Workout Progress Bar */}
             <div className="w-100 rounded bg-light" style={{ height: "20px" }} >
-                <div className="h-100 rounded bg-success " style={{ width: workoutTargetAvg + "%" }}></div>
+                <div className="h-100 rounded bg-success " style={isfinished? {width:'100%'} : { width: workoutTargetAvg + "%"}}></div>
             </div>
             <div className="control_timer d-flex justify-content-between w-100">
                 <button type='button' className="btn btn_pause text-light fs-3 border-dark btn-outline-dark" onClick={handlePauseTimer} disabled={!isPaused} >Pause</button >
-                <button type="button" className="btn btn_start text-light fs-3 border-dark btn-outline-dark " onClick={handleStartTimer} disabled={isPaused} >Start</button>
+                <button type="button" className="btn btn_start text-light fs-3 border-dark btn-outline-dark " onClick={handleStartTimer} disabled={isPaused === true ? isPaused : isPaused} >Start</button>
                 <button type="button" className="btn text-light fs-3 " onClick={handleReset}>Reset</button>
             </div>
         </div>
