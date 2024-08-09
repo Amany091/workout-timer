@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { tasks } from './tasks'
 
-const Workout = ({ index, setIndex, setActive, currentIndex }) => {
+const Workout = ({ index, setIndex, setActive, currentIndex ,timer,isFinished,setIsFinished}) => {
     let [timeWidth, setTimeWidth] = useState(0);
     const [isPaused, setIsPaused] = useState(false)
-    const [isfinished,setIsFinished] = useState(false)
+    // const [isFinished,setIsFinished] = useState(false)
     let [workoutSecondsDone, setWorkoutSecondsDone] = useState({})
     const intervalRef = useRef()
-    let timer = useRef(tasks[currentIndex].time);
+    // let timer = useRef(tasks[currentIndex].time);
     const currentIndexRef = useRef(index) // store current index to stayed updated across renders
-    let workoutDone = [...tasks].splice(0, currentIndex)
+    let workoutDone = [...tasks].splice(0, currentIndex) // display workout done from zero to current  
 
     // calculate the remaining time from current activity to last one
     const workoutRemaining = [...tasks].splice(currentIndex),
@@ -21,7 +21,7 @@ const Workout = ({ index, setIndex, setActive, currentIndex }) => {
     const handleStartTimer = useCallback(() => {
         setIsPaused(!isPaused)
         intervalRef.current = setInterval(() => {
-            if (currentIndexRef.current === tasks.length -1 && timer.current < 0) {
+            if (currentIndexRef.current === tasks.length -1 && timer.current == 0) { // if all workout are finished then clear interval
                 setIsPaused(true)
                 setIsFinished(true)
                 return()=>clearInterval(intervalRef.current)
@@ -47,7 +47,7 @@ const Workout = ({ index, setIndex, setActive, currentIndex }) => {
 
     useEffect(() => {
         setIndex(currentIndex)
-        currentIndexRef.current = index
+        currentIndexRef.current = index // update state from sidebar
         // calculate minutes and seconds from beggening activity to current one
         workoutSecondsDone = {
             workoutMinutes: workoutDone.map(({ time }) => time).reduce((acc, curr) => acc + curr, 0) / 60,
@@ -60,7 +60,6 @@ const Workout = ({ index, setIndex, setActive, currentIndex }) => {
         timer.current = tasks[currentIndex].time
 
     }, [index, currentIndex, setIndex])
-
 
     const handlePauseTimer = () => {
         setIsPaused(!isPaused)
@@ -78,28 +77,31 @@ const Workout = ({ index, setIndex, setActive, currentIndex }) => {
     }
 
     return (
-        <div className='w-50 d-flex flex-column mt-5 align-items-center workout'>
-            <h1 className={`${tasks[index].time > 10 ? 'text-warning' : "text-success"} text-center`} > {isfinished? 'Workout Completed 🎉' : tasks[index].task} </h1>
+        <div className={` d-flex flex-column align-items-center w-75 mx-auto workout`}>
+            <h1 className={`${tasks[index].time > 10 ? 'text-warning' : "text-success"} text-center`} > {isFinished? 'Workout Completed 🎉' : tasks[index].task} </h1>
             <h4>
-                {isfinished ? '🎉🎉🎉🎉🎉':
+                {isFinished ? '🎉🎉🎉🎉🎉':
                     workoutRemaining.length == 1 ? "Last activity , almost done" :
                     workoutRemaining.length === 0 ? '' : 'next: ' + tasks[index + 1].task
                 }
             </h4>
-            <h1 className='text-success'>00: {isfinished? '00' : timer.current} </h1>
+            <h1 className='text-success'>00: {isFinished? '00' : timer.current} </h1>
             {/* Current Activity Time Progress Bar */}
             <div className=" w-100 rounded bg-light overflow-hidden" style={{ height: "20px" }} >
-                <div className="h-100 rounded bg-success " style={isfinished? {width:'100%'} :{ width: timeWidth + '%' }}></div>
+                <div className="h-100 rounded bg-success " style={isFinished? {width:'100%'} :{ width: timeWidth + '%' }}></div>
             </div>
             {/* Workout Time Range */}
             <div className="time mt-5 w-100 d-flex justify-content-between">
-                <p className="h4">{Math.floor(workoutSecondsDone.workoutMinutes) < 10 ? '0' + Math.floor(workoutSecondsDone.workoutMinutes) : Math.floor(workoutSecondsDone.workoutMinutes)} : {workoutSecondsDone.workoutSeconds < 10 ? '0' + workoutSecondsDone.workoutSeconds % 60 : workoutSecondsDone.workoutSeconds} </p>
+                <p className="h4">
+                    {Math.floor(workoutSecondsDone.workoutMinutes) < 10 ? '0' + Math.floor(workoutSecondsDone.workoutMinutes) : Math.floor(workoutSecondsDone.workoutMinutes)}
+                    : {workoutSecondsDone.workoutSeconds < 10 ? '0' + workoutSecondsDone.workoutSeconds % 60 : workoutSecondsDone.workoutSeconds} </p>
 
-                <p className="h4">{Math.floor(workoutRemainingSeconds / 60) < 10 ? '0' + Math.floor(workoutRemainingSeconds / 60) : Math.floor(workoutRemainingSeconds / 60)}: {workoutRemainingSeconds % 60 < 10 ? '0' + workoutRemainingSeconds % 60 : workoutRemainingSeconds % 60}</p>
+                <p className="h4">{Math.floor(workoutRemainingSeconds / 60) < 10 ? '0' + Math.floor(workoutRemainingSeconds / 60) : Math.floor(workoutRemainingSeconds / 60)}
+                    : {workoutRemainingSeconds % 60 < 10 ? '0' + workoutRemainingSeconds % 60 : workoutRemainingSeconds % 60}</p>
             </div>
             {/* Workout Progress Bar */}
             <div className="w-100 rounded bg-light" style={{ height: "20px" }} >
-                <div className="h-100 rounded bg-success " style={isfinished? {width:'100%'} : { width: workoutTargetAvg + "%"}}></div>
+                <div className="h-100 rounded bg-success " style={isFinished? {width:'100%'} : { width: workoutTargetAvg + "%"}}></div>
             </div>
             <div className="control_timer d-flex justify-content-between w-100">
                 <button type='button' className="btn btn_pause text-light fs-3 border-dark btn-outline-dark" onClick={handlePauseTimer} disabled={!isPaused} >Pause</button >
